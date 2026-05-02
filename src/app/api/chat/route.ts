@@ -2,10 +2,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { chatWithDocument } from '@/lib/openai'
-import { buildDocumentPrompt, estimateTokenSplit, selectRelevantChunks } from '@/lib/document'
+import { chatWithDocument, createEmbedding } from '@/lib/openai'
+import { buildDocumentPrompt, estimateTokenSplit } from '@/lib/document'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { selectRelevantVectorChunks } from '@/lib/vector-store'
+import { getTokenQuota } from '@/lib/token-quota'
 import type { Prisma } from '@prisma/client'
+
+interface RetrievedChunk {
+  index: number
+  text: string
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const rateLimit = checkRateLimit(session.user.id, { limit: 20, windowMs: 60_000 })
+    const rateLimit = checkRateLimit(session.user.id, { limit: 3, windowMs: 60_000 })
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: 'Too many chat requests. Please wait a minute and try again.' },
@@ -30,8 +37,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const currentUsage = await prisma.tokenUsage.findMany({
+      where: {
+        userId: session.user.id,
+        date: today
+      }
+    })
+    const quota = getTokenQuota(
+      currentUsage.reduce((sum, item) => sum + item.totalTokens, 0)
+    )
+
+    if (quota.isExceeded) {
+      return NextResponse.json(
+        {
+          error: `Daily token limit reached. You used ${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()} tokens today.`
+        },
+        { status: 429 }
+      )
+    }
+
     let documentPrompt = ''
-    let citations: Array<{ label: string; chunk: number }> = []
+    let citations: Array<{ label: string; section: number }> = []
 
     if (fileId) {
       const file = await prisma.file.findUnique({
@@ -42,11 +71,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'File not found' }, { status: 404 })
       }
 
-      const chunks = selectRelevantChunks(file.content, message, 4)
+      const chunks = await selectRelevantVectorChunks({
+        prisma,
+        file,
+        query: message,
+        embed: createEmbedding,
+        limit: 4
+      }) as RetrievedChunk[]
       documentPrompt = buildDocumentPrompt(file, chunks)
       citations = chunks.map((chunk) => ({
-        label: `${file.originalName} - chunk ${chunk.index}`,
-        chunk: chunk.index
+        label: `${file.originalName} - section ${chunk.index}`,
+        section: chunk.index
       }))
     }
 
@@ -75,9 +110,6 @@ export async function POST(request: NextRequest) {
         tokens: aiResponse.tokens
       }
     })
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
     const tokenSplit = estimateTokenSplit(aiResponse.tokens)
     const existingUsage = await prisma.tokenUsage.findFirst({

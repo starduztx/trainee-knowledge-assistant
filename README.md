@@ -8,7 +8,7 @@ Mini Knowledge Assistant for the Dev Trainee assessment. The app lets a signed-i
 - Auth: NextAuth Credentials provider with bcrypt password hashing
 - Database: SQLite with Prisma ORM
 - AI: OpenAI Responses API (`gpt-5.4-mini` by default)
-- Document handling: TXT parsing, PDF text extraction, chunk-based retrieval
+- Document handling: TXT parsing, PDF text extraction, chunking, embeddings, SQLite vector retrieval
 - Deploy: Docker Compose
 
 ## Setup & Run
@@ -46,22 +46,22 @@ npm run dev
 - [x] Extract readable text from PDFs
 - [x] Chat with AI
 - [x] Chat with selected uploaded file context
-- [x] Chunk retrieval for large documents
+- [x] RAG with chunking, OpenAI embeddings, and SQLite-backed vector retrieval
 - [x] Token usage per assistant response and total usage panel
+- [x] Daily per-user token quota display and guardrail
 - [x] Conversation history by selected file
 - [x] Markdown rendering for assistant answers
 - [x] Citation list from document chunks
 - [x] Basic in-memory rate limiting for chat
 - [x] Docker Compose with healthcheck
 - [x] Unit tests for document utilities and rate limiting
-- [ ] Vector database RAG
 - [ ] Streaming response
 
 ## Architecture
 
 The app uses server-side protected routes through NextAuth. Auth, files, chats, and token usage are stored in SQLite through Prisma. Uploaded documents are validated in the file API, converted to text, normalized, and saved in the database.
 
-When a user sends a chat message with a selected file, the chat API verifies the file belongs to the current user, splits the document into chunks, selects the most relevant chunks by query overlap, and sends only those excerpts to OpenAI. Assistant messages and token usage are saved after the API response.
+When a user uploads a document, the API extracts text, splits it into chunks, generates embeddings with OpenAI, and stores those vectors in SQLite. When a user sends a chat message with a selected file, the chat API verifies the file belongs to the current user, embeds the question, retrieves the closest document chunks by cosine similarity, and sends only those excerpts to OpenAI. If embeddings are unavailable, the app falls back to keyword chunk retrieval so the core feature still works.
 
 ## Test Commands
 
@@ -81,8 +81,8 @@ npm.cmd run build
 
 ## Known Issues
 
-- Retrieval is chunk-based keyword matching, not a full vector database.
+- Vector retrieval is stored in SQLite as serialized embeddings, not an external vector service like Qdrant or Pinecone.
 - Image-only or scanned PDFs need OCR; the current parser reads PDF text layers only.
 - Token input/output split is estimated when the provider only returns total tokens.
-- Rate limiting is in-memory, so it resets when the server restarts.
+- Rate limiting and daily token quota are app-level guardrails, not billing controls.
 - Docker expects `.env` to exist locally and contain a valid OpenAI key.

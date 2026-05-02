@@ -8,8 +8,9 @@ services:
     environment:
       NODE_ENV: production
       NEXTAUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
     volumes:
-      - ./prisma/dev.db:/app/prisma/dev.db
+      - ./prisma:/app/prisma
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/login"]
       interval: 30s

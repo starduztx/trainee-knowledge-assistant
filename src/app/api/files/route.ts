@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PDFParse } from 'pdf-parse'
 import { normalizeText, validateUploadFile } from '@/lib/document'
+import { createEmbedding } from '@/lib/openai'
+import { createDocumentChunks } from '@/lib/vector-store'
 import path from 'path'
 import { pathToFileURL } from 'url'
 
@@ -78,6 +80,13 @@ export async function POST(request: NextRequest) {
         content: content,
         fileSize: file.size
       }
+    })
+
+    await createDocumentChunks({
+      prisma,
+      fileId: savedFile.id,
+      content,
+      embed: createEmbedding
     })
 
     return NextResponse.json(savedFile)

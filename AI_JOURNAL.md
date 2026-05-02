@@ -74,3 +74,8 @@
 **Prompt:** "Rewrite README to match the assessment required sections."
 **AI Response:** The response proposed Tech Stack, Setup, Features Done, Architecture, Known Issues, and test commands.
 **My Adjustment:** I wrote the README in assessment-friendly language and clearly marked unfinished bonus items.
+
+## Session 16: Adding vector retrieval
+**Prompt:** "Add RAG with embeddings without making the Docker setup too heavy."
+**AI Response:** The response suggested storing document chunks and embeddings, then ranking chunks by cosine similarity.
+**My Adjustment:** I used SQLite as a lightweight local vector store and kept keyword retrieval as a fallback if embedding generation fails.

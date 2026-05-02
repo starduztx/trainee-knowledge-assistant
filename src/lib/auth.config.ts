@@ -2,6 +2,7 @@
 import type { NextAuthConfig } from 'next-auth'
 
 export const authConfig = {
+  trustHost: true,
   providers: [], // we configure providers in auth.ts
   callbacks: {
     async jwt({ token, user }) {

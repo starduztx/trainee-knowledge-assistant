@@ -114,10 +114,10 @@ export function buildDocumentPrompt(file, chunks) {
   if (!file || chunks.length === 0) return ''
 
   const sections = chunks
-    .map((chunk) => `[${file.originalName || file.filename} - chunk ${chunk.index}]\n${chunk.text}`)
+    .map((chunk) => `[${file.originalName || file.filename} - section ${chunk.index}]\n${chunk.text}`)
     .join('\n\n---\n\n')
 
-  return `Use the document excerpts below to answer. Cite the chunk label when useful.\n\n${sections}`
+  return `Use the document excerpts below to answer. Cite the section label when useful.\n\n${sections}`
 }
 
 export function estimateTokenSplit(totalTokens) {

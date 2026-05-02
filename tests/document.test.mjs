@@ -5,6 +5,12 @@ import {
   selectRelevantChunks,
   validateUploadFile
 } from '../src/lib/document.js'
+import {
+  cosineSimilarity,
+  parseEmbedding,
+  serializeEmbedding
+} from '../src/lib/vector-store.js'
+import { getTokenQuota } from '../src/lib/token-quota.js'
 
 const tests = [
   ['validateUploadFile accepts txt and pdf under 10MB', () => {
@@ -54,6 +60,25 @@ const tests = [
     const split = estimateTokenSplit(101)
     assert.equal(split.inputTokens + split.outputTokens, 101)
     assert.equal(split.totalTokens, 101)
+  }],
+  ['cosineSimilarity ranks similar vectors higher', () => {
+    assert.equal(cosineSimilarity([1, 0], [1, 0]), 1)
+    assert.equal(cosineSimilarity([1, 0], [0, 1]), 0)
+  }],
+  ['serializeEmbedding and parseEmbedding round trip vectors', () => {
+    const serialized = serializeEmbedding([0.1, 0.2, 0.3])
+    assert.deepEqual(parseEmbedding(serialized), [0.1, 0.2, 0.3])
+  }],
+  ['getTokenQuota reports remaining daily allowance', () => {
+    const quota = getTokenQuota(2312, 10000)
+    assert.equal(quota.remaining, 7688)
+    assert.equal(quota.percentUsed, 23)
+    assert.equal(quota.isExceeded, false)
+  }],
+  ['getTokenQuota marks exceeded usage', () => {
+    const quota = getTokenQuota(10000, 10000)
+    assert.equal(quota.remaining, 0)
+    assert.equal(quota.isExceeded, true)
   }]
 ]
 

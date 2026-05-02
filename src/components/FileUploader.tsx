@@ -65,7 +65,7 @@ export function FileUploader({ onFileUploaded }: FileUploaderProps) {
   return (
     <div className="w-full">
       <div
-        className={`rounded-md border border-dashed p-5 text-center transition-colors ${
+        className={`rounded-md border border-dashed p-4 text-center transition-colors ${
           dragOver
             ? 'border-neutral-900 bg-white'
             : 'border-neutral-300 bg-white hover:border-neutral-500'
@@ -91,8 +91,8 @@ export function FileUploader({ onFileUploaded }: FileUploaderProps) {
         />
 
         <label htmlFor="file-upload" className="block cursor-pointer">
-          <div className="space-y-3">
-            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-xl font-medium text-white">
+          <div className="space-y-2">
+            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-lg font-medium text-white">
               +
             </div>
             <div>

@@ -15,22 +15,31 @@ interface Message {
 interface ChatBoxProps {
   fileId?: string
   selectedFileName?: string
+  resetKey?: number
   onMessageSent?: () => void
 }
 
 interface Citation {
   label: string
-  chunk: number
+  section: number
 }
 
-export function ChatBox({ fileId, selectedFileName, onMessageSent }: ChatBoxProps) {
+export function ChatBox({ fileId, selectedFileName, resetKey = 0, onMessageSent }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [citationsByMessage, setCitationsByMessage] = useState<Record<string, Citation[]>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const lastResetKeyRef = useRef(resetKey)
 
   useEffect(() => {
+    if (resetKey !== lastResetKeyRef.current) {
+      lastResetKeyRef.current = resetKey
+      setMessages([])
+      setCitationsByMessage({})
+      return
+    }
+
     const fetchChats = async () => {
       const url = fileId ? `/api/chat?fileId=${fileId}` : '/api/chat'
 
@@ -47,7 +56,7 @@ export function ChatBox({ fileId, selectedFileName, onMessageSent }: ChatBoxProp
     }
 
     fetchChats()
-  }, [fileId])
+  }, [fileId, resetKey])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -140,9 +149,11 @@ export function ChatBox({ fileId, selectedFileName, onMessageSent }: ChatBoxProp
             {selectedFileName || 'General assistant'}
           </p>
         </div>
-        <span className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-500">
-          {fileId ? 'Document chat' : 'General chat'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-500">
+            {fileId ? 'Document chat' : 'General chat'}
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
@@ -177,7 +188,7 @@ export function ChatBox({ fileId, selectedFileName, onMessageSent }: ChatBoxProp
                 ) : (
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 )}
-                {message.tokens && message.tokens > 0 && (
+                {Number(message.tokens) > 0 && (
                   <p className={`mt-2 text-xs ${message.role === 'user' ? 'text-neutral-300' : 'text-neutral-500'}`}>
                     {message.tokens} tokens
                   </p>

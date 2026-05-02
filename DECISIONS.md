@@ -14,19 +14,19 @@ SQLite with Prisma gives a real relational model while keeping setup simple. Rev
 ### Trade-offs
 SQLite is not ideal for high concurrency or large production deployments. For this assessment, the simplicity and reliability of one local database file is more valuable than adding infrastructure.
 
-## Decision 2: Chunk retrieval instead of a full vector database
+## Decision 2: SQLite-backed vector retrieval instead of an external vector service
 
 ### Context
-The rubric allows vector DB RAG as a bonus, but the required feature is that users can ask questions about uploaded documents. I wanted the app to handle larger documents better than sending the whole file to the model every time.
+The rubric allows vector DB RAG as a bonus, and the required feature is that users can ask questions about uploaded documents. I wanted the app to handle larger documents better than sending the whole file to the model every time while still keeping setup simple for reviewers.
 
 ### Alternatives Considered
-A full vector database with embeddings would improve semantic retrieval. Sending the whole document would be simpler but fails on large files and wastes tokens.
+An external vector database such as Qdrant, Chroma, or Pinecone would be closer to a production RAG setup. Sending the whole document would be simpler but fails on large files and wastes tokens. Keyword-only chunk retrieval would be cheaper but less accurate when the user's wording differs from the document.
 
 ### Why Chunk Retrieval
-The current implementation splits document text into chunks and picks relevant chunks by query overlap. This keeps token usage lower, avoids extra services, and is easy to inspect during a live interview.
+The current implementation splits document text into chunks, creates OpenAI embeddings, stores those vectors in SQLite, and retrieves chunks by cosine similarity. This gives the assessment a real semantic retrieval path while avoiding another service in `docker compose`.
 
 ### Trade-offs
-Keyword retrieval can miss answers when the user's wording differs from the document. If this became a production feature, I would add embeddings and a vector index next.
+SQLite is not a specialized vector database, so this is not as scalable as Qdrant/Pinecone and it performs similarity in application code. If this became a production feature, I would move embeddings to a dedicated vector index.
 
 ## Decision 3: NextAuth credentials with bcrypt and JWT sessions
 

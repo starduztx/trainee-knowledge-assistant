@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getTokenQuota } from '@/lib/token-quota'
 
 export async function GET() {
   try {
@@ -18,10 +19,22 @@ export async function GET() {
     })
 
     const totalTokens = tokenUsage.reduce((sum, item) => sum + item.totalTokens, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayTotal = tokenUsage
+      .filter((item) => item.date.getTime() === today.getTime())
+      .reduce((sum, item) => sum + item.totalTokens, 0)
+    const quota = getTokenQuota(todayTotal)
 
     return NextResponse.json({
       usage: tokenUsage,
-      total: totalTokens
+      total: totalTokens,
+      todayTotal,
+      dailyLimit: quota.limit,
+      remaining: quota.remaining,
+      percentUsed: quota.percentUsed,
+      isWarning: quota.isWarning,
+      isExceeded: quota.isExceeded
     })
   } catch (error) {
     console.error('Get token usage error:', error)

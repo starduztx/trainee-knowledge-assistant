@@ -7,6 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "docker:start": "npx prisma db push && node scripts/seed-users.mjs && npm run start",
+    "db:push": "prisma db push",
+    "db:seed": "node scripts/seed-users.mjs",
     "lint": "eslint",
     "test": "node tests/run.mjs"
   },
