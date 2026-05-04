@@ -19,13 +19,24 @@ export function Dashboard({ currentUser }: { currentUser: string }) {
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null)
   const [filesRefreshKey, setFilesRefreshKey] = useState(0)
   const [usageRefreshKey, setUsageRefreshKey] = useState(0)
-  const [chatResetKey, setChatResetKey] = useState(0)
+  const [chatInstanceKey, setChatInstanceKey] = useState(0)
+  const [chatStartsCleared, setChatStartsCleared] = useState(false)
 
   const refreshFiles = () => setFilesRefreshKey((key) => key + 1)
   const refreshUsage = () => setUsageRefreshKey((key) => key + 1)
-  const startNewChat = () => {
+  const clearChatView = () => {
+    setChatStartsCleared(true)
+    setChatInstanceKey((key) => key + 1)
+  }
+  const selectGeneralChat = () => {
     setSelectedFile(null)
-    setChatResetKey((key) => key + 1)
+    setChatStartsCleared(false)
+    setChatInstanceKey((key) => key + 1)
+  }
+  const selectFile = (file: FileInfo) => {
+    setSelectedFile(file)
+    setChatStartsCleared(false)
+    setChatInstanceKey((key) => key + 1)
   }
 
   return (
@@ -37,7 +48,7 @@ export function Dashboard({ currentUser }: { currentUser: string }) {
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setSelectedFile(null)}
+                onClick={selectGeneralChat}
                 className={`rounded-md px-2.5 py-1 text-xs ${
                   selectedFile
                     ? 'text-neutral-600 hover:bg-neutral-100'
@@ -48,16 +59,18 @@ export function Dashboard({ currentUser }: { currentUser: string }) {
               </button>
               <button
                 type="button"
-                onClick={startNewChat}
+                onClick={clearChatView}
                 className="rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
               >
-                New draft
+                Clear view
               </button>
             </div>
           </div>
           <FileUploader
             onFileUploaded={(file) => {
               setSelectedFile(file)
+              setChatStartsCleared(false)
+              setChatInstanceKey((key) => key + 1)
               refreshFiles()
             }}
           />
@@ -72,7 +85,7 @@ export function Dashboard({ currentUser }: { currentUser: string }) {
             <FileList
               refreshKey={filesRefreshKey}
               selectedFileId={selectedFile?.id}
-              onFileSelect={setSelectedFile}
+              onFileSelect={selectFile}
             />
           </div>
         </section>
@@ -82,9 +95,10 @@ export function Dashboard({ currentUser }: { currentUser: string }) {
 
       <section className="min-h-0 pl-4">
         <ChatBox
+          key={chatInstanceKey}
           fileId={selectedFile?.id}
           selectedFileName={selectedFile?.originalName}
-          resetKey={chatResetKey}
+          startCleared={chatStartsCleared}
           onMessageSent={refreshUsage}
         />
       </section>

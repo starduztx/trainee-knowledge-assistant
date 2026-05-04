@@ -27,7 +27,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-4. Open `http://localhost:3000`.
+The container runs Prisma setup and seeds the mock users automatically.
+
+4. Open `http://localhost:3000` and sign in with `admin/admin123` or `admin1/admin123`.
 
 For local development:
 
@@ -51,8 +53,8 @@ npm run dev
 - [x] Daily per-user token quota display and guardrail
 - [x] Conversation history by selected file
 - [x] Markdown rendering for assistant answers
-- [x] Citation list from document chunks
-- [x] Basic in-memory rate limiting for chat
+- [x] Citation list from document sections
+- [x] Basic in-memory rate limiting for chat (3 requests per minute per user)
 - [x] Docker Compose with healthcheck
 - [x] Unit tests for document utilities and rate limiting
 - [ ] Streaming response
@@ -61,7 +63,9 @@ npm run dev
 
 The app uses server-side protected routes through NextAuth. Auth, files, chats, and token usage are stored in SQLite through Prisma. Uploaded documents are validated in the file API, converted to text, normalized, and saved in the database.
 
-When a user uploads a document, the API extracts text, splits it into chunks, generates embeddings with OpenAI, and stores those vectors in SQLite. When a user sends a chat message with a selected file, the chat API verifies the file belongs to the current user, embeds the question, retrieves the closest document chunks by cosine similarity, and sends only those excerpts to OpenAI. If embeddings are unavailable, the app falls back to keyword chunk retrieval so the core feature still works.
+When a user uploads a document, the API extracts text, splits it into sections, generates embeddings with OpenAI, and stores those vectors in SQLite. When a user sends a chat message with a selected file, the chat API verifies the file belongs to the current user, embeds the question, retrieves the closest document sections by cosine similarity, and sends only those excerpts to OpenAI.
+
+Embedding failures are handled gracefully. If the embedding API is unavailable because of quota, rate limits, or network errors, the app falls back to keyword-based section retrieval instead of failing the whole chat request.
 
 ## Test Commands
 
@@ -82,6 +86,7 @@ npm.cmd run build
 ## Known Issues
 
 - Vector retrieval is stored in SQLite as serialized embeddings, not an external vector service like Qdrant or Pinecone.
+- If OpenAI embedding requests hit quota or rate limits, the app falls back to keyword-based section retrieval, so document chat can still work but answer relevance may be lower than vector retrieval.
 - Image-only or scanned PDFs need OCR; the current parser reads PDF text layers only.
 - Token input/output split is estimated when the provider only returns total tokens.
 - Rate limiting and daily token quota are app-level guardrails, not billing controls.

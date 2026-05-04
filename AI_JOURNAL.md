@@ -28,7 +28,7 @@
 ## Session 6: Large document context
 **Prompt:** "How can I avoid sending an entire uploaded document to the LLM?"
 **AI Response:** The response suggested chunking and selecting relevant chunks.
-**My Adjustment:** I implemented keyword-overlap retrieval instead of a vector database to keep the assessment scope realistic.
+**My Adjustment:** I first implemented keyword-overlap retrieval, then upgraded it to embedding-based section retrieval while keeping keyword retrieval as a fallback.
 
 ## Session 7: File ownership security
 **Prompt:** "What security checks are needed before chatting with a fileId?"
@@ -48,7 +48,7 @@
 ## Session 10: Rate limiting
 **Prompt:** "What is a simple rate limit appropriate for a junior assessment app?"
 **AI Response:** The response suggested an in-memory per-user window limit.
-**My Adjustment:** I used 20 chat requests per minute and documented that it resets on server restart.
+**My Adjustment:** I set the app limit to 3 chat requests per minute per user to match the small OpenAI project limit used during testing.
 
 ## Session 11: Lint failures
 **Prompt:** "Explain the React hook lint errors around functions declared after useEffect."
@@ -63,7 +63,7 @@
 ## Session 13: Docker setup
 **Prompt:** "Create a Dockerfile and docker-compose setup for this Next.js app."
 **AI Response:** The response suggested a multi-stage build and a compose healthcheck.
-**My Adjustment:** I kept a SQLite volume mount for local persistence and a `/login` healthcheck.
+**My Adjustment:** I kept a SQLite `prisma` folder mount for local persistence, added startup DB setup, seeded mock users, and used a `/login` healthcheck.
 
 ## Session 14: Unit tests
 **Prompt:** "What can be unit tested without a browser or database?"
@@ -79,3 +79,13 @@
 **Prompt:** "Add RAG with embeddings without making the Docker setup too heavy."
 **AI Response:** The response suggested storing document chunks and embeddings, then ranking chunks by cosine similarity.
 **My Adjustment:** I used SQLite as a lightweight local vector store and kept keyword retrieval as a fallback if embedding generation fails.
+
+## Session 17: Docker production fixes
+**Prompt:** "Docker starts but Prisma/Auth errors appear in the container logs."
+**AI Response:** The response identified missing runtime files and production host trust settings.
+**My Adjustment:** I copied `prisma.config.ts` and seed scripts into the runner image, added a default database URL, and enabled trusted host handling for Docker localhost.
+
+## Session 18: UI polish after manual testing
+**Prompt:** "The chat UI shows 0 after user messages and chunk labels are too technical."
+**AI Response:** The response traced the issue to rendering zero-token user messages and suggested user-facing section labels.
+**My Adjustment:** I hid zero-token labels, changed citations from chunk to section, and kept the internal chunking implementation unchanged.

@@ -22,8 +22,8 @@ The rubric allows vector DB RAG as a bonus, and the required feature is that use
 ### Alternatives Considered
 An external vector database such as Qdrant, Chroma, or Pinecone would be closer to a production RAG setup. Sending the whole document would be simpler but fails on large files and wastes tokens. Keyword-only chunk retrieval would be cheaper but less accurate when the user's wording differs from the document.
 
-### Why Chunk Retrieval
-The current implementation splits document text into chunks, creates OpenAI embeddings, stores those vectors in SQLite, and retrieves chunks by cosine similarity. This gives the assessment a real semantic retrieval path while avoiding another service in `docker compose`.
+### Why Section Retrieval
+The current implementation splits document text into internal chunks, labels them as user-facing sections, creates OpenAI embeddings, stores those vectors in SQLite, and retrieves the closest sections by cosine similarity. This gives the assessment a real semantic retrieval path while avoiding another service in `docker compose`.
 
 ### Trade-offs
 SQLite is not a specialized vector database, so this is not as scalable as Qdrant/Pinecone and it performs similarity in application code. If this became a production feature, I would move embeddings to a dedicated vector index.

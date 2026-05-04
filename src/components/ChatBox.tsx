@@ -15,7 +15,7 @@ interface Message {
 interface ChatBoxProps {
   fileId?: string
   selectedFileName?: string
-  resetKey?: number
+  startCleared?: boolean
   onMessageSent?: () => void
 }
 
@@ -24,21 +24,20 @@ interface Citation {
   section: number
 }
 
-export function ChatBox({ fileId, selectedFileName, resetKey = 0, onMessageSent }: ChatBoxProps) {
+export function ChatBox({
+  fileId,
+  selectedFileName,
+  startCleared = false,
+  onMessageSent
+}: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [citationsByMessage, setCitationsByMessage] = useState<Record<string, Citation[]>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const lastResetKeyRef = useRef(resetKey)
 
   useEffect(() => {
-    if (resetKey !== lastResetKeyRef.current) {
-      lastResetKeyRef.current = resetKey
-      setMessages([])
-      setCitationsByMessage({})
-      return
-    }
+    if (startCleared) return
 
     const fetchChats = async () => {
       const url = fileId ? `/api/chat?fileId=${fileId}` : '/api/chat'
@@ -56,7 +55,7 @@ export function ChatBox({ fileId, selectedFileName, resetKey = 0, onMessageSent 
     }
 
     fetchChats()
-  }, [fileId, resetKey])
+  }, [fileId, startCleared])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
